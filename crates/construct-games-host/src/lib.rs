@@ -10,8 +10,10 @@
 //! never a panic in the host, and never a move.
 //!
 //! This layer runs a game; it does not referee a match. Who may move, the order of
-//! moves and the state hash are the match's (plan stage 3), which must check them itself:
-//! a third-party module need not be built with the SDK that checks turn order.
+//! moves and the state hash are [`game_match`]'s, which checks them itself: a third-party
+//! module need not be built with the SDK that checks turn order.
+
+pub mod game_match;
 
 use std::fmt;
 
@@ -116,6 +118,42 @@ impl std::error::Error for CallError {}
 pub enum Applied {
     State(Vec<u8>),
     Invalid(Invalid),
+}
+
+impl Applied {
+    /// Reads an encoded `ApplyResult`.
+    pub fn decode(bytes: &[u8]) -> Result<Self, CallError> {
+        applied(bytes)
+    }
+}
+
+/// What a match needs from a game. [`GameModule`] is the implementation that runs a
+/// module; tests implement it over a game's native code, so the match protocol can be
+/// exercised for thousands of games without the cost of an instance per call.
+pub trait Rules {
+    fn id(&self) -> GameId;
+    fn init(&self, seed: &[u8; SEED_LEN], options: &[u8]) -> Result<Applied, CallError>;
+    fn apply(&self, state: &[u8], mv: &[u8], player: u32) -> Result<Applied, CallError>;
+    fn legal_moves(&self, state: &[u8], player: u32) -> Result<MoveList, CallError>;
+    fn status(&self, state: &[u8]) -> Result<Status, CallError>;
+}
+
+impl Rules for GameModule {
+    fn id(&self) -> GameId {
+        GameModule::id(self)
+    }
+    fn init(&self, seed: &[u8; SEED_LEN], options: &[u8]) -> Result<Applied, CallError> {
+        GameModule::init(self, seed, options)
+    }
+    fn apply(&self, state: &[u8], mv: &[u8], player: u32) -> Result<Applied, CallError> {
+        GameModule::apply(self, state, mv, player)
+    }
+    fn legal_moves(&self, state: &[u8], player: u32) -> Result<MoveList, CallError> {
+        GameModule::legal_moves(self, state, player)
+    }
+    fn status(&self, state: &[u8]) -> Result<Status, CallError> {
+        GameModule::status(self, state)
+    }
 }
 
 /// The raw answer of one export, with the fuel it took.

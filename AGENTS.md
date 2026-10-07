@@ -17,6 +17,7 @@ The app draws the board from the `GameView` the module returns; a game has no UI
 | `crates/construct-game-abi` | Rust types generated from it (protox + prost, no `protoc`) |
 | `crates/construct-game-sdk` | `trait Game`, `export_game!`, `bytes` — what a module's exports run |
 | `crates/construct-games-host` | loads and runs modules: load-time checks, a fresh instance per call, fuel, memory |
+| `crates/construct-games-host/src/game_match.rs` | the match protocol both sides run: numbered messages, state hash, turn order, hash-chain rolls, resign and draw |
 | `games/<name>` | one game per crate; `tictactoe` is the reference |
 | `GAMES.sha256` | the hash of every game — its id. Tracked on purpose |
 
@@ -36,8 +37,15 @@ The app draws the board from the `GameView` the module returns; a game has no UI
   the state.
 - **State encoding is canonical**: whatever `decode` accepts re-encodes to the same bytes.
   Both players hash it after every move.
-- **Turn order is the SDK's** (`bytes::checked_apply`). A game's `apply` is called only for
-  the player its own `status` names.
+- **Turn order is checked twice**: by the SDK (`bytes::checked_apply`) inside the module,
+  and by the match against the game's `status` — a third-party module need not use the SDK.
+- **A side reveals its chain value for roll `k` only once its own game waits for roll
+  `k`.** Earlier, the other side would know a future roll while choosing its moves.
+  `values_leave_only_for_rolls_the_game_has_asked_for` checks it after every single step;
+  a check after full delivery missed a one-roll-early leak (2026-10-07).
+- **Match agreement assumes eventual delivery.** The two-sides test ends with a full
+  resend; without it a lost resignation left the sides disagreeing, which is the
+  network's fault, not the protocol's. Clients resend `Match::sent()`.
 - **Bytes, never JSON**, across the ABI.
 - **The proto is the one authority.** Never hand-write a type that mirrors a message.
 
@@ -82,8 +90,9 @@ cargo test --locked
 A test that cannot fail is worse than none. A new rule check is done when breaking the rule
 in the source makes a named test fail. The tic-tac-toe tree walk was checked this way: it
 fails on a disabled win check and on a removed turn check. So were the host's checks on
-imports, floats, fuel and output size. An unlimited fuel budget shows up as a hang, not a
-failure, so run that mutation under a time limit.
+imports, floats, fuel and output size, and the match's checks on the state hash, chain
+values, turn order, conflicting repeats and reveal timing. An unlimited fuel budget shows
+up as a hang, not a failure, so run that mutation under a time limit.
 
 ## Commits
 

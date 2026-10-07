@@ -38,8 +38,8 @@ scripts/check-reproducible.sh   # same bytes from two checkout paths (x86_64 Lin
 
 ## Status
 
-ABI v1, the SDK, the host and tic-tac-toe as the reference game (32 KB) are in place. Not
-yet written: the match protocol, chess, backgammon, go. See the plan in the Konstruct docs
+ABI v1, the SDK, the host, the match protocol and tic-tac-toe as the reference game (32 KB)
+are in place. Not yet written: chess, backgammon, go. See the plan in the Konstruct docs
 vault, `decisions/games-execution-plan.md`.
 
 Game hashes come from a reference build on x86_64 Linux, which is CI. Off Linux,
