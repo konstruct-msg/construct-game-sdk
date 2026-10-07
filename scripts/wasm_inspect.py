@@ -15,7 +15,6 @@ REQUIRED_EXPORTS = {
     "memory",
     "cg_abi_version",
     "cg_alloc",
-    "cg_free",
     "cg_init",
     "cg_apply",
     "cg_legal_moves",

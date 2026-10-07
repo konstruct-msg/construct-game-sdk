@@ -30,16 +30,20 @@ cells are numbered, what a `GameView` holds — is
 [`crates/construct-game-abi/proto/construct_game_abi.proto`](crates/construct-game-abi/proto/construct_game_abi.proto).
 
 ```bash
-cargo test                      # native, through the same byte-level functions the module runs
-scripts/build-games.sh          # dist/<game>.wasm, checked, hashes compared with GAMES.sha256
-scripts/check-reproducible.sh   # same bytes from two different checkout paths
+scripts/build-games.sh --native # dist/<game>.wasm for development, checked
+scripts/build-games.sh          # the reference build; compares with GAMES.sha256 (CI)
+cargo test                      # native, and the built modules through the host
+scripts/check-reproducible.sh   # same bytes from two checkout paths (x86_64 Linux / CI)
 ```
 
 ## Status
 
-ABI v1 and the SDK are in place, with tic-tac-toe as the reference game (32 KB). Not yet
-written: the host (`construct-games-host`), the match protocol, chess, backgammon, go. See
-the plan in the Konstruct docs vault, `decisions/games-execution-plan.md`.
+ABI v1, the SDK, the host and tic-tac-toe as the reference game (32 KB) are in place. Not
+yet written: the match protocol, chess, backgammon, go. See the plan in the Konstruct docs
+vault, `decisions/games-execution-plan.md`.
+
+Game hashes come from a reference build on x86_64 Linux, which is CI. Off Linux,
+`build-games.sh --native` builds for development.
 
 ## License
 

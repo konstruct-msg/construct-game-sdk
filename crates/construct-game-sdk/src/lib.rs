@@ -184,11 +184,6 @@ macro_rules! export_game {
             }
 
             #[unsafe(no_mangle)]
-            pub unsafe extern "C" fn cg_free(ptr: u32, len: u32) {
-                unsafe { $crate::__private::free(ptr, len) }
-            }
-
-            #[unsafe(no_mangle)]
             pub unsafe extern "C" fn cg_init(
                 seed: u32,
                 seed_len: u32,
@@ -258,20 +253,14 @@ pub mod __private {
 
     pub use dlmalloc::GlobalDlmalloc;
 
-    /// A buffer the host fills and later frees with `free`.
+    /// A buffer the host fills. Never freed: the host drops the whole instance after the
+    /// call.
     ///
     /// # Safety
     /// Called only through the `cg_alloc` export.
     pub unsafe fn alloc(len: u32) -> u32 {
         let buf: Box<[u8]> = vec![0u8; len as usize].into_boxed_slice();
         Box::into_raw(buf) as *mut u8 as u32
-    }
-
-    /// # Safety
-    /// `ptr`/`len` must come from `alloc` or from a result returned by `output`.
-    pub unsafe fn free(ptr: u32, len: u32) {
-        let slice = core::ptr::slice_from_raw_parts_mut(ptr as *mut u8, len as usize);
-        drop(unsafe { Box::from_raw(slice) });
     }
 
     /// # Safety
@@ -283,7 +272,7 @@ pub mod __private {
         unsafe { core::slice::from_raw_parts(ptr as *const u8, len as usize) }
     }
 
-    /// `(ptr << 32) | len`, or 0 when the module failed. The host frees the buffer.
+    /// `(ptr << 32) | len`, or 0 when the module failed. Leaked on purpose (see `alloc`).
     /// An empty result is still a non-zero value: an empty boxed slice's pointer is
     /// dangling but never null.
     pub fn output(result: Option<Vec<u8>>) -> u64 {

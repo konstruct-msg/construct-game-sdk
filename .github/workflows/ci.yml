@@ -26,17 +26,25 @@ jobs:
       - name: Clippy (native)
         run: cargo clippy --locked --all-targets -- -D warnings
 
+      # The host never runs inside wasm; only what a game links is checked for wasm32.
       - name: Clippy (wasm32)
-        run: cargo clippy --locked --release --target wasm32-unknown-unknown --workspace -- -D warnings
+        run: cargo clippy --locked --release --target wasm32-unknown-unknown --workspace --exclude construct-games-host -- -D warnings
+
+      # The reference build: this runner is x86_64 Linux, the host the hashes in
+      # GAMES.sha256 are defined for. Fails if a hash differs; when a change moves one
+      # on purpose, the new hash is in this step's log. Before the tests, because the
+      # host's differential test runs the built module from dist/.
+      - name: Build games, compare hashes
+        run: scripts/build-games.sh
+
+      - name: Upload the reference modules
+        uses: actions/upload-artifact@v4
+        with:
+          name: games
+          path: dist/
 
       - name: Tests
         run: cargo test --locked
-
-      # Builds every game and fails if a hash differs from GAMES.sha256, which was
-      # written on a developer's machine: this step is the cross-machine half of the
-      # reproducibility check.
-      - name: Build games, compare hashes
-        run: scripts/build-games.sh
 
       - name: Reproducible across paths
         run: scripts/check-reproducible.sh

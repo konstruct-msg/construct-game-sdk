@@ -3,6 +3,7 @@ resolver = "3"
 members = [
     "crates/construct-game-abi",
     "crates/construct-game-sdk",
+    "crates/construct-games-host",
     "games/tictactoe",
 ]
 
@@ -21,11 +22,13 @@ prost-build = "0.14"
 protox = "0.9"
 dlmalloc = { version = "0.2", features = ["global"] }
 
-# A game's id is the SHA-256 of its .wasm, so the release build of a game must be
-# byte-for-byte reproducible: scripts/check-reproducible.sh builds it twice, from two
-# different paths, and compares. Every setting below either shrinks the module or
+# The profile games are built with (scripts/build-games.sh), kept apart from `release` so
+# the host is not optimised for size. A game's id is the SHA-256 of its .wasm, so this
+# build must be byte-for-byte reproducible: scripts/check-reproducible.sh builds it from
+# two different paths and compares. Every setting below either shrinks the module or
 # removes a source of variation between two builds.
-[profile.release]
+[profile.wasm]
+inherits = "release"
 opt-level = "z"
 lto = true
 codegen-units = 1

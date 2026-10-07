@@ -8,7 +8,7 @@ ABI or adding a game.
 ## What this is
 
 Games for Konstruct's virtual room. A game is a WASM module with pure functions; the host
-(`construct-games-host`, plan stage 2, not written yet) runs it inside `construct-core`.
+(`construct-games-host`) runs it, and will run inside `construct-core` (plan stage 6).
 The app draws the board from the `GameView` the module returns; a game has no UI code.
 
 | Path | What |
@@ -16,6 +16,7 @@ The app draws the board from the `GameView` the module returns; a game has no UI
 | `crates/construct-game-abi/proto/construct_game_abi.proto` | **the** ABI: exports, messages, cell numbering |
 | `crates/construct-game-abi` | Rust types generated from it (protox + prost, no `protoc`) |
 | `crates/construct-game-sdk` | `trait Game`, `export_game!`, `bytes` — what a module's exports run |
+| `crates/construct-games-host` | loads and runs modules: load-time checks, a fresh instance per call, fuel, memory |
 | `games/<name>` | one game per crate; `tictactoe` is the reference |
 | `GAMES.sha256` | the hash of every game — its id. Tracked on purpose |
 
@@ -24,7 +25,13 @@ The app draws the board from the `GameView` the module returns; a game has no UI
 - **A module imports nothing and has no start function.** No clock, no randomness, no
   host calls. Randomness comes only as a move by `PLAYER_CHANCE`.
   `scripts/wasm_inspect.py` fails a module that imports; the host will too.
-- **No floating point in a game.** The host will refuse `f32`/`f64` instructions (stage 2).
+- **No floating point and no SIMD in a game.** The host refuses both at load.
+- **Every host call is a fresh instance.** Nothing a module keeps survives to the next
+  call, so there is no `cg_free` and a module may treat memory as an arena. Do not add
+  instance reuse to save time: it is what makes hidden state between calls impossible.
+- **wasmi runs with `portable-dispatch`.** Without it a module looping until it ran out
+  of fuel overflowed the host's native stack and aborted the process. `hostile.rs` has
+  the regression tests; keep them.
 - **No hash maps in a game** — `BTreeMap`/`BTreeSet`. Iteration order must depend only on
   the state.
 - **State encoding is canonical**: whatever `decode` accepts re-encodes to the same bytes.
@@ -44,10 +51,21 @@ A game's id is the SHA-256 of its `.wasm`. So:
 - **Any edit to a game's source moves its hash — `cargo fmt` included.** Panic locations
   (file:line:col) are compiled in, and stable Rust cannot drop them. Expect it; do not
   "fix" it with nightly flags.
-- Builds are reproducible across paths and machines: `build-games.sh` remaps every path
-  (checkout, cargo registry, toolchain, std sources), and fails if anything under `$HOME`
-  is left in a module. `scripts/check-reproducible.sh` builds from two paths and compares;
-  CI compares a Linux build with the hashes committed from macOS.
+- **The hashes are the reference build's: x86_64 Linux, rustc 1.96.0, the image pinned
+  by digest in `build-games.sh`.** Cargo mixes `rustc -vV`, which names the host, into
+  every crate's metadata, and the metadata reaches the module's bytes. So a Mac and Linux
+  build of the same source are different games (found 2026-10-07 when CI disagreed).
+  **CI is the reference builder**: its "Build games" step compares with `GAMES.sha256`,
+  prints the hashes, and uploads the modules as the `games` artifact.
+- Locally, `build-games.sh` re-runs itself in the pinned image under emulation. On the
+  owner's Mac rustc hung there twice at the same crate, with no error. For development,
+  use `build-games.sh --native`: the tests run on its `dist/`, and `GAMES.sha256` is left
+  alone. When a hash moves on purpose, take the new one from CI's log. Never commit
+  hashes from a native macOS build.
+- Within the reference environment builds do not depend on the path: every path is
+  remapped (checkout, cargo registry, toolchain, std sources), and the build fails if one
+  of those prefixes is left in a module. `scripts/check-reproducible.sh` builds from two
+  paths and compares. It runs on x86_64 Linux only, which means in CI.
 - `rust-toolchain.toml` moves in lockstep with construct-core's, and moving it changes
   every hash.
 
@@ -56,14 +74,16 @@ A game's id is the SHA-256 of its `.wasm`. So:
 ```bash
 cargo fmt --all
 cargo clippy --locked --all-targets -- -D warnings
-cargo clippy --locked --release --target wasm32-unknown-unknown --workspace -- -D warnings
+cargo clippy --locked --release --target wasm32-unknown-unknown --workspace --exclude construct-games-host -- -D warnings
+scripts/build-games.sh --native # dist/ for the host tests; CI checks the reference hashes
 cargo test --locked
-scripts/build-games.sh          # --update if a hash moved on purpose
 ```
 
 A test that cannot fail is worse than none. A new rule check is done when breaking the rule
 in the source makes a named test fail. The tic-tac-toe tree walk was checked this way: it
-fails on a disabled win check and on a removed turn check.
+fails on a disabled win check and on a removed turn check. So were the host's checks on
+imports, floats, fuel and output size. An unlimited fuel budget shows up as a hang, not a
+failure, so run that mutation under a time limit.
 
 ## Commits
 

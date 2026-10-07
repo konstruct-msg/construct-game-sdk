@@ -8,12 +8,16 @@
 // module's memory; a returned u64 is (ptr << 32) | len, and 0 means the module failed):
 //
 //   cg_abi_version() -> u32                                  = 1
-//   cg_alloc(len) -> ptr          cg_free(ptr, len)
+//   cg_alloc(len) -> ptr
 //   cg_init(seed, options) -> ApplyResult                    seed is exactly 32 bytes
 //   cg_apply(state, move, player: u32) -> ApplyResult
 //   cg_legal_moves(state, player: u32) -> MoveList
 //   cg_view(state, player: u32) -> GameView
 //   cg_status(state) -> Status
+//
+// The host runs every call in a fresh instance and drops it afterwards: nothing a module
+// keeps between calls survives, and nothing is ever freed — there is no cg_free. A module
+// may treat memory as an arena.
 //
 // State, move and options bytes are the game's own encoding, opaque to the host. The state
 // encoding must be canonical — one state, one byte string — because both players hash it

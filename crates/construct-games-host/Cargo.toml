@@ -1,0 +1,27 @@
+[package]
+name = "construct-games-host"
+description = "Runs Konstruct game modules: load-time checks, a fresh instance per call, fuel and memory limits"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+
+[dependencies]
+construct-game-abi.workspace = true
+# `validate` is what lets Config refuse floats; `simd` is left off, so SIMD is refused too.
+#
+# `portable-dispatch` is not a performance choice. Without it (or `auto-dispatch`) wasmi
+# runs every instruction as a tail call and relies on LLVM to turn those into jumps; an
+# unoptimised build does not, and each executed instruction then takes a native stack
+# frame. A module looping until it runs out of fuel overflowed the host's stack and
+# aborted the process — the app, in production. `auto-dispatch` would pick tail calls in
+# optimised builds only, which still stakes the host on a compiler optimisation. The loop
+# backend keeps the stack flat in every build; board games do not need the speed.
+wasmi = { version = "2.0", default-features = false, features = ["std", "validate", "portable-dispatch"] }
+sha2 = "0.10"
+
+[dev-dependencies]
+construct-game-sdk.workspace = true
+tictactoe = { path = "../../games/tictactoe" }
+wat = "1"
