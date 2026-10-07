@@ -1,0 +1,16 @@
+[package]
+name = "construct-game-check"
+description = "Checks a Konstruct game module the way the host runs it, and then some: an audit tool"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+
+[dependencies]
+construct-game-abi.workspace = true
+construct-games-host = { path = "../construct-games-host" }
+
+[dev-dependencies]
+construct-game-sdk.workspace = true
+tictactoe = { path = "../../games/tictactoe" }

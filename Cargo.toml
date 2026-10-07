@@ -2,6 +2,7 @@
 resolver = "3"
 members = [
     "crates/construct-game-abi",
+    "crates/construct-game-check",
     "crates/construct-game-sdk",
     "crates/construct-games-host",
     "games/chess",

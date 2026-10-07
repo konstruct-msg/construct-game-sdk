@@ -18,6 +18,7 @@ The app draws the board from the `GameView` the module returns; a game has no UI
 | `crates/construct-game-sdk` | `trait Game`, `export_game!`, `bytes` — what a module's exports run |
 | `crates/construct-games-host` | loads and runs modules: load-time checks, a fresh instance per call, fuel, memory |
 | `crates/construct-games-host/src/game_match.rs` | the match protocol both sides run: numbered messages, state hash, turn order, hash-chain rolls, resign and draw |
+| `crates/construct-game-check` | the audit tool: plays random games against a module and holds it to the ABI; CI runs it on every game |
 | `games/<name>` | one game per crate; `tictactoe` is the reference, `chess` on `cozy-chess` |
 | `GAMES.sha256` | the hash of every game — its id. Tracked on purpose |
 
@@ -51,6 +52,12 @@ The app draws the board from the `GameView` the module returns; a game has no UI
   is (white or black) is decided by the seed.
 - **Draws are automatic, never claimed** — repetition, fifty moves, insufficient material.
   Both clients must reach the same verdict from the state alone.
+- **Every call stays under a tenth of the fuel limit** (10 M since 2026-10-07, set from
+  chess's worst position, 218 legal moves, 757 k). `construct-game-check` fails a game
+  that comes closer. Raising the limit to fit a game is a decision, not a fix.
+- **Each check in `construct-game-check` has a test that plants its defect**
+  (`tests/defects.rs`) and one that shows the unbroken games pass. A new check comes with
+  both.
 - **Bytes, never JSON**, across the ABI.
 - **The proto is the one authority.** Never hand-write a type that mirrors a message.
 
@@ -87,9 +94,10 @@ A game's id is the SHA-256 of its `.wasm`. So:
 ```bash
 cargo fmt --all
 cargo clippy --locked --all-targets -- -D warnings
-cargo clippy --locked --release --target wasm32-unknown-unknown --workspace --exclude construct-games-host -- -D warnings
+cargo clippy --locked --release --target wasm32-unknown-unknown --workspace --exclude construct-games-host --exclude construct-game-check -- -D warnings
 scripts/build-games.sh --native # dist/ for the host tests; CI checks the reference hashes
 cargo test --locked
+cargo run --release -p construct-game-check -- --games 60 dist/*.wasm   # a minute; CI runs it
 ```
 
 A test that cannot fail is worse than none. A new rule check is done when breaking the rule

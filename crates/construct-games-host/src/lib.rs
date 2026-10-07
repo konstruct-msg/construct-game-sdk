@@ -36,8 +36,13 @@ impl fmt::Debug for GameId {
     }
 }
 
-/// Bounds on one module. The fuel figure is provisional until `construct-game-check`
-/// measures real games (plan stage 5).
+/// Bounds on one module.
+///
+/// The fuel figure was measured, not guessed (2026-10-07): the costliest call of any
+/// game is chess's `legal_moves` in a position with 218 legal moves, the most a legal
+/// chess position has — 757 k fuel, about 1 ms. 10 M is 13 times that, and
+/// `construct-game-check` requires every game to stay under a tenth of it. It also bounds
+/// what a module that loops costs per call: about 12 ms.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Limits {
     pub module_bytes: usize,
@@ -51,7 +56,7 @@ impl Default for Limits {
     fn default() -> Self {
         Self {
             module_bytes: 4 << 20,
-            fuel_per_call: 100_000_000,
+            fuel_per_call: 10_000_000,
             memory_bytes: 16 << 20,
             message_bytes: 1 << 20,
         }

@@ -74,6 +74,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "construct-game-check"
+version = "0.1.0"
+dependencies = [
+ "construct-game-abi",
+ "construct-game-sdk",
+ "construct-games-host",
+ "tictactoe",
+]
+
+[[package]]
 name = "construct-game-sdk"
 version = "0.1.0"
 dependencies = [

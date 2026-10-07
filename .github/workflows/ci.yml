@@ -26,9 +26,10 @@ jobs:
       - name: Clippy (native)
         run: cargo clippy --locked --all-targets -- -D warnings
 
-      # The host never runs inside wasm; only what a game links is checked for wasm32.
+      # The host and the check tool never run inside wasm; only what a game links is checked
+      # for wasm32.
       - name: Clippy (wasm32)
-        run: cargo clippy --locked --release --target wasm32-unknown-unknown --workspace --exclude construct-games-host -- -D warnings
+        run: cargo clippy --locked --release --target wasm32-unknown-unknown --workspace --exclude construct-games-host --exclude construct-game-check -- -D warnings
 
       # The reference build: this runner is x86_64 Linux, the host the hashes in
       # GAMES.sha256 are defined for. Fails if a hash differs; when a change moves one
@@ -45,6 +46,11 @@ jobs:
 
       - name: Tests
         run: cargo test --locked
+
+      # Every game through the audit tool, as a third-party game will be. Fewer games than
+      # its default: chess costs about 0.2 ms a call, and 60 games are some 20 000 positions.
+      - name: Check the games
+        run: cargo run --locked --release -p construct-game-check -- --games 60 dist/*.wasm
 
       - name: Reproducible across paths
         run: scripts/check-reproducible.sh
