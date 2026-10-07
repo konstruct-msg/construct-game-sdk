@@ -99,9 +99,10 @@ message MoveList {
   repeated MoveOption moves = 1;
 }
 
-// Cell indices, per board:
-//   Grid { w, h }        index = y * w + x, y = 0 is the bottom row from player 0's side
-//   Intersections { n }  index = y * n + x, same orientation
+// Cell indices are the game's own fixed coordinates, the same for both players; the
+// app draws them as below, or turned half a circle when GameView.flipped is set.
+//   Grid { w, h }        index = y * w + x, y = 0 the bottom row (chess: a1 = 0, h8 = 63)
+//   Intersections { n }  index = y * n + x, y = 0 the bottom row
 //   Points24             0..=23 the points, numbered from player 0's home;
 //                        24 + p = player p's bar, 26 + p = borne off by player p
 message Board {
@@ -158,6 +159,7 @@ message GameView {
   repeated Piece pieces = 2;
   repeated Highlight highlights = 3;
   Text status = 4;
-  // The player whose side of the board is at the bottom.
-  uint32 orientation = 5;
+  // The board seen from the other side: the app turns it half a circle. Each game decides
+  // per viewer — chess flips it for black. A game where it means nothing leaves it false.
+  bool flipped = 5;
 }

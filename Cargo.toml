@@ -4,6 +4,7 @@ members = [
     "crates/construct-game-abi",
     "crates/construct-game-sdk",
     "crates/construct-games-host",
+    "games/chess",
     "games/tictactoe",
 ]
 

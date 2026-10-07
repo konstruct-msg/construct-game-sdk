@@ -38,8 +38,16 @@ scripts/check-reproducible.sh   # same bytes from two checkout paths (x86_64 Lin
 
 ## Status
 
-ABI v1, the SDK, the host, the match protocol and tic-tac-toe as the reference game (32 KB)
-are in place. Not yet written: chess, backgammon, go. See the plan in the Konstruct docs
+ABI v1, the SDK, the host, the match protocol, tic-tac-toe as the reference game and chess
+are in place. Not yet written: backgammon, go.
+
+| Game | Module | Of which | A call through the host |
+|---|---|---|---|
+| tic-tac-toe | 32 KB | | ~17 µs |
+| chess | 1.6 MB | 1.5 MB `cozy-chess` move tables | 0.15–0.25 ms; most fuel seen 0.3 M of 100 M |
+
+Sizes are a reference point, not a limit. A call's cost is mostly the copy of the module's
+data into the fresh instance every call gets. See the plan in the Konstruct docs
 vault, `decisions/games-execution-plan.md`.
 
 Game hashes come from a reference build on x86_64 Linux, which is CI. Off Linux,

@@ -1,0 +1,16 @@
+[package]
+name = "chess"
+description = "Chess for the Konstruct virtual room"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+construct-game-sdk.workspace = true
+cozy-chess = { version = "0.3", default-features = false }

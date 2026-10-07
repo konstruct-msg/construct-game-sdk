@@ -23,5 +23,6 @@ sha2 = "0.10"
 
 [dev-dependencies]
 construct-game-sdk.workspace = true
+chess = { path = "../../games/chess" }
 tictactoe = { path = "../../games/tictactoe" }
 wat = "1"

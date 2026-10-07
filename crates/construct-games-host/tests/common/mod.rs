@@ -134,11 +134,8 @@ impl Game for DiceRace {
         }
     }
 
-    fn view(_: &RaceState, player: u32) -> GameView {
-        GameView {
-            orientation: player,
-            ..GameView::default()
-        }
+    fn view(_: &RaceState, _: u32) -> GameView {
+        GameView::default()
     }
 
     fn status(state: &RaceState) -> Status {

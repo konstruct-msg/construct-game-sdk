@@ -18,7 +18,7 @@ The app draws the board from the `GameView` the module returns; a game has no UI
 | `crates/construct-game-sdk` | `trait Game`, `export_game!`, `bytes` — what a module's exports run |
 | `crates/construct-games-host` | loads and runs modules: load-time checks, a fresh instance per call, fuel, memory |
 | `crates/construct-games-host/src/game_match.rs` | the match protocol both sides run: numbered messages, state hash, turn order, hash-chain rolls, resign and draw |
-| `games/<name>` | one game per crate; `tictactoe` is the reference |
+| `games/<name>` | one game per crate; `tictactoe` is the reference, `chess` on `cozy-chess` |
 | `GAMES.sha256` | the hash of every game — its id. Tracked on purpose |
 
 ## Invariants
@@ -46,6 +46,11 @@ The app draws the board from the `GameView` the module returns; a game has no UI
 - **Match agreement assumes eventual delivery.** The two-sides test ends with a full
   resend; without it a lost resignation left the sides disagreeing, which is the
   network's fault, not the protocol's. Clients resend `Match::sent()`.
+- **Cell numbers are the game's own fixed frame** (chess: a1 = 0); `GameView.flipped`
+  turns the board for a viewer. Never number cells from a player's side: who that player
+  is (white or black) is decided by the seed.
+- **Draws are automatic, never claimed** — repetition, fifty moves, insufficient material.
+  Both clients must reach the same verdict from the state alone.
 - **Bytes, never JSON**, across the ABI.
 - **The proto is the one authority.** Never hand-write a type that mirrors a message.
 

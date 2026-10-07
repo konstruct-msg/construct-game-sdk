@@ -230,7 +230,7 @@ impl Game for TicTacToe {
             pieces,
             highlights,
             status: Some(status),
-            orientation: player,
+            flipped: false,
         }
     }
 
