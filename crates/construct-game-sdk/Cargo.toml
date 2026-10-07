@@ -1,0 +1,14 @@
+[package]
+name = "construct-game-sdk"
+description = "Write a Konstruct game: implement Game, call export_game!"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+
+[dependencies]
+construct-game-abi.workspace = true
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+dlmalloc.workspace = true

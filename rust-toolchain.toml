@@ -1,0 +1,11 @@
+# Pinned in lockstep with construct-core's rust-toolchain.toml: construct-core compiles
+# construct-games-host (a git dependency pinned by `rev`) with its own toolchain, and the
+# games' .wasm hashes depend on the compiler — a different rustc is a different game id.
+#
+# Bumping the channel changes the hash of every game. That is expected; it is why the
+# hashes in dist/ are rebuilt and reviewed in the same change.
+
+[toolchain]
+channel = "1.96.0"
+components = ["rustfmt", "clippy"]
+targets = ["wasm32-unknown-unknown"]

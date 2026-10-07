@@ -1,0 +1,159 @@
+// The contract between a game module and its host — ABI version 1.
+//
+// These messages never leave the device: the host decodes them and hands the app its own
+// types. They are protobuf, not a Rust-only format, because a game may be written in any
+// language that compiles to wasm32 — this file is what such an author reads.
+//
+// Exports of a module (all integers are wasm i32/i64; "bytes" is a ptr/len pair in the
+// module's memory; a returned u64 is (ptr << 32) | len, and 0 means the module failed):
+//
+//   cg_abi_version() -> u32                                  = 1
+//   cg_alloc(len) -> ptr          cg_free(ptr, len)
+//   cg_init(seed, options) -> ApplyResult                    seed is exactly 32 bytes
+//   cg_apply(state, move, player: u32) -> ApplyResult
+//   cg_legal_moves(state, player: u32) -> MoveList
+//   cg_view(state, player: u32) -> GameView
+//   cg_status(state) -> Status
+//
+// State, move and options bytes are the game's own encoding, opaque to the host. The state
+// encoding must be canonical — one state, one byte string — because both players hash it
+// after every move and compare.
+
+syntax = "proto3";
+
+package construct.game.abi.v1;
+
+// Players are 0 and 1. A move by PLAYER_CHANCE is a roll the host computed from both
+// players' revealed randomness; its bytes are a ChanceRoll. Fields that name a player are
+// uint32 holding one of these values.
+enum Player {
+  PLAYER_0 = 0;
+  PLAYER_1 = 1;
+  PLAYER_CHANCE = 255;
+}
+
+message Invalid {
+  // Game-defined, for logs and tests.
+  uint32 code = 1;
+  // A string key the app localises, e.g. "game.chess.invalid.in_check".
+  string reason_key = 2;
+}
+
+message ApplyResult {
+  oneof result {
+    bytes state = 1;
+    Invalid invalid = 2;
+  }
+}
+
+// What a game waiting for chance needs: one die per entry, entry = number of sides.
+// Backgammon asks for [6, 6].
+message ChanceSpec {
+  repeated uint32 dice = 1;
+}
+
+// The host's answer to a ChanceSpec, passed to cg_apply as the move of PLAYER_CHANCE.
+// values[i] is in 1..=dice[i].
+message ChanceRoll {
+  repeated uint32 values = 1;
+}
+
+message Outcome {
+  oneof result {
+    uint32 winner = 1;
+    Draw draw = 2;
+  }
+  // Why it ended, e.g. "game.chess.end.checkmate".
+  string reason_key = 3;
+}
+
+message Draw {}
+
+message Status {
+  oneof state {
+    // The player to move.
+    uint32 to_move = 1;
+    ChanceSpec awaiting_chance = 2;
+    Outcome finished = 3;
+  }
+}
+
+// A legal move, described so the app can offer it without knowing the game:
+//   from + to   — tap a piece, then a target (chess, checkers, backgammon);
+//   to only     — tap a target (go, tic-tac-toe);
+//   neither     — a button titled action_key ("pass", "done scoring");
+//   choice_key  — several moves share from/to; the app asks which (promotion piece, die).
+message MoveOption {
+  bytes move = 1;
+  optional uint32 from = 2;
+  optional uint32 to = 3;
+  string choice_key = 4;
+  string action_key = 5;
+}
+
+message MoveList {
+  repeated MoveOption moves = 1;
+}
+
+// Cell indices, per board:
+//   Grid { w, h }        index = y * w + x, y = 0 is the bottom row from player 0's side
+//   Intersections { n }  index = y * n + x, same orientation
+//   Points24             0..=23 the points, numbered from player 0's home;
+//                        24 + p = player p's bar, 26 + p = borne off by player p
+message Board {
+  oneof kind {
+    Grid grid = 1;
+    Intersections intersections = 2;
+    Points24 points24 = 3;
+  }
+}
+
+message Grid {
+  uint32 width = 1;
+  uint32 height = 2;
+}
+
+message Intersections {
+  uint32 size = 1;
+}
+
+message Points24 {}
+
+message Piece {
+  uint32 cell = 1;
+  // An image from the game's set, e.g. "white_knight". First-party games use the app's
+  // bundled set; the image names are part of the game.
+  string image = 2;
+  uint32 owner = 3;
+  // Stacked pieces on one cell (backgammon); 0 is read as 1.
+  uint32 count = 4;
+  // What VoiceOver / TalkBack says, e.g. "game.chess.piece.white_knight".
+  string label_key = 5;
+}
+
+message Highlight {
+  enum Kind {
+    KIND_UNSPECIFIED = 0;
+    KIND_LAST_MOVE = 1;
+    KIND_CHECK = 2;
+    KIND_WINNING_LINE = 3;
+    KIND_MARKED = 4;  // go scoring: a stone marked dead
+  }
+  uint32 cell = 1;
+  Kind kind = 2;
+}
+
+message Text {
+  string key = 1;
+  repeated string args = 2;
+}
+
+// What one player sees. No code draws it but the app.
+message GameView {
+  Board board = 1;
+  repeated Piece pieces = 2;
+  repeated Highlight highlights = 3;
+  Text status = 4;
+  // The player whose side of the board is at the bottom.
+  uint32 orientation = 5;
+}

@@ -1,0 +1,40 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/construct-game-abi",
+    "crates/construct-game-sdk",
+    "games/tictactoe",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "Apache-2.0"
+rust-version = "1.96"
+repository = "https://github.com/konstruct-msg/construct-game-sdk"
+
+[workspace.dependencies]
+construct-game-abi = { path = "crates/construct-game-abi" }
+construct-game-sdk = { path = "crates/construct-game-sdk" }
+prost = { version = "0.14", default-features = false, features = ["derive"] }
+prost-build = "0.14"
+protox = "0.9"
+dlmalloc = { version = "0.2", features = ["global"] }
+
+# A game's id is the SHA-256 of its .wasm, so the release build of a game must be
+# byte-for-byte reproducible: scripts/check-reproducible.sh builds it twice, from two
+# different paths, and compares. Every setting below either shrinks the module or
+# removes a source of variation between two builds.
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+debug = false
+incremental = false
+
+# The tic-tac-toe test walks the whole game tree (~550k positions) through the ABI;
+# unoptimised that takes half a minute.
+[profile.test]
+opt-level = 2
