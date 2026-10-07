@@ -67,4 +67,7 @@ fails on a disabled win check and on a removed turn check.
 
 ## Commits
 
-Conventional Commits. Never commit on `main`; topic branch, PR when asked.
+Conventional Commits. **Commits go straight to `main`** (owner, 2026-10-07): nothing consumes
+this repo yet, and branches only slow the work. This ends when construct-core pins the host by
+`rev` (plan stage 6) — from then on it is a topic branch and a PR, as in every other
+construct-* repo. Push only when asked.
