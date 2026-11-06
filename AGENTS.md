@@ -40,7 +40,7 @@ Canonical source: `~/Code/construct-docs/decisions/rules-from-the-first-year.md`
 
 ## Rules
 
-1. **Prior art first.** Before a new match-protocol mechanism, write down how others solve it and why we deviate.
+1. **Prior art first.** Before a new match-protocol mechanism, write down how others solve it and why we deviate. Read them, do not recall them: the note links the code or spec it read, answers who may use theirs and what a refused party sees, lists what in ours is our own, why, and what would let us remove it, and gives the share of real traffic each new condition or exception affects. `~/Code/construct-docs/scripts/check_prior_art.py` refuses a decision note without the link.
 2. **The module and host decide, the app executes.** State, hash, turn order and verdict that both players must compute identically come from the module and `game_match.rs`, never from a client.
 3. **A message names the state it means.** Match messages are numbered and carry the state hash; a fix that needs a timer or retry budget means the message lacks an address.
 4. **Reproduce, then fix.** A disagreement between the sides gets a test that reproduces it first.
