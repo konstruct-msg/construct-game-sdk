@@ -116,9 +116,12 @@ impl Codec for State {
         {
             return None;
         }
+        // `keys.len() == count * 8` above: no remainder.
         let history: Vec<u64> = keys
-            .chunks_exact(8)
-            .map(|k| u64::from_le_bytes(k.try_into().unwrap()))
+            .as_chunks::<8>()
+            .0
+            .iter()
+            .map(|k| u64::from_le_bytes(*k))
             .collect();
         let last_ok = |s: u8| s == NO_SQUARE || s < 64;
         if !last_ok(from) || !last_ok(to) || (from == NO_SQUARE) != (to == NO_SQUARE) {
