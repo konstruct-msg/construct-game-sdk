@@ -10,7 +10,7 @@
 # A game's id is its hash, so GAMES.sha256 is tracked: a change that moves a hash shows
 # up in the diff and is reviewed as what it is — a different game.
 #
-# The hashes are those of the reference build: x86_64 Linux, rustc 1.96.0. Cargo mixes
+# The hashes are those of the reference build: x86_64 Linux, rustc 1.100.0. Cargo mixes
 # `rustc -vV` — which names the host — into every crate's metadata, and the metadata
 # reaches the module's bytes (a version bump alone, same code, moved the hash), so a Mac
 # and Linux build the same source to different games. On x86_64 Linux (CI) the script
@@ -20,8 +20,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 TARGET=wasm32-unknown-unknown
 REFERENCE_HOST=x86_64-unknown-linux-gnu
-# rust:1.96.0, the linux/amd64 manifest. By digest: a tag can be repointed.
-REFERENCE_IMAGE=rust@sha256:477cee146d00e0dd888ce66a279ff78ccfd6fdf265e83414a4264652643c881a
+# rust:1.100.0, the linux/amd64 manifest. By digest: a tag can be repointed.
+REFERENCE_IMAGE=rust@sha256:ebc54bef33ec8f9a5cd05799366010f35efbb73b354fb4f2cb086ec6b9460ef5
 MODE="${1:-check}"
 
 cd "$ROOT"
